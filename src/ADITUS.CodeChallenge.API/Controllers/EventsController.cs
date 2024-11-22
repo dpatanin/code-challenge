@@ -17,7 +17,7 @@ namespace ADITUS.CodeChallenge.API
     [Route("")]
     public async Task<IActionResult> GetEvents()
     {
-      var events = await _eventService.GetEvents();
+      var events = await _eventService.GetEventsWithStatistics();
       return Ok(events);
     }
 
@@ -25,7 +25,7 @@ namespace ADITUS.CodeChallenge.API
     [Route("{id}")]
     public async Task<IActionResult> GetEvent(Guid id)
     {
-      var @event = await _eventService.GetEvent(id);
+      var @event = await _eventService.GetEventWithStatistics(id);
       if (@event == null)
       {
         return NotFound();

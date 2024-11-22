@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ADITUS.CodeChallenge.API.Domain;
 
 namespace ADITUS.CodeChallenge.API.Services
@@ -5,9 +6,11 @@ namespace ADITUS.CodeChallenge.API.Services
   public class EventService : IEventService
   {
     private readonly IList<Event> _events;
+    private readonly HttpClient _httpClient;
 
-    public EventService()
+    public EventService(HttpClient httpClient)
     {
+      _httpClient = httpClient;
       _events = new List<Event>
       {
         new Event
@@ -67,6 +70,93 @@ namespace ADITUS.CodeChallenge.API.Services
     public Task<IList<Event>> GetEvents()
     {
       return Task.FromResult(_events);
+    }
+
+    public async Task<IList<Event>> GetEventsWithStatistics()
+    {
+      var events = await GetEvents();
+      foreach (var @event in events)
+      {
+        @event.Statistics = await FetchAndMergeStatistics(@event.Id, @event.Type);
+      }
+      return events;
+    }
+
+    public async Task<Event> GetEventWithStatistics(Guid id)
+    {
+      var @event = await GetEvent(id);
+      if (@event != null)
+      {
+        @event.Statistics = await FetchAndMergeStatistics(@event.Id, @event.Type);
+      }
+      return @event;
+    }
+
+    public async Task<EventStatistics> FetchAndMergeStatistics(Guid id, EventType type)
+    {
+      var statistics = new EventStatistics();
+
+      if (type == EventType.Online || type == EventType.Hybrid)
+      {
+        var onlineStatisticsUrl = $"https://codechallenge-statistics.azurewebsites.net/api/online-statistics/{id}";
+        statistics.Online = await FetchOnlineStatistics(onlineStatisticsUrl);
+      }
+
+      if (type == EventType.OnSite || type == EventType.Hybrid)
+      {
+        var onsiteStatisticsUrl = $"https://codechallenge-statistics.azurewebsites.net/api/onsite-statistics/{id}";
+        statistics.OnSite = await FetchOnSiteStatistics(onsiteStatisticsUrl);
+      }
+
+      return statistics;
+    }
+
+    private async Task<OnlineStatistics> FetchOnlineStatistics(string url)
+    {
+      try
+      {
+        var response = await _httpClient.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+          var content = await response.Content.ReadAsStringAsync();
+          var statistics = JsonSerializer.Deserialize<OnlineStatistics>(content);
+          return statistics;
+        }
+        else
+        {
+          return null;
+        }
+      }
+      catch (Exception)
+      {
+        // Log errors if necessary
+        return null;
+      }
+    }
+
+    private async Task<OnSiteStatistics> FetchOnSiteStatistics(string url)
+    {
+      try
+      {
+        var response = await _httpClient.GetAsync(url);
+
+        if (response.IsSuccessStatusCode)
+        {
+          var content = await response.Content.ReadAsStringAsync();
+          var statistics = JsonSerializer.Deserialize<OnSiteStatistics>(content);
+          return statistics;
+        }
+        else
+        {
+          return null;
+        }
+      }
+      catch (Exception)
+      {
+        // Log errors if necessary
+        return null;
+      }
     }
   }
 }

@@ -6,5 +6,9 @@ namespace ADITUS.CodeChallenge.API.Services
   {
     Task<Event> GetEvent(Guid id);
     Task<IList<Event>> GetEvents();
+    Task<IList<Event>> GetEventsWithStatistics();
+    Task<Event> GetEventWithStatistics(Guid id);
+
+    Task<EventStatistics> FetchAndMergeStatistics(Guid id, EventType type);
   }
 }
