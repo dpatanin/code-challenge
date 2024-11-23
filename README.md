@@ -73,3 +73,12 @@ Diese soll den potenziellen Konsumenten der Schnittstellen einen Überblick übe
 Zu jedem dieser Endpunkte soll dokumentiert sein, welche Daten der Endpunkt vom Konsumenten entgegennimmt und welche Daten von der Schnittstelle übertragen werden.
 
 Wie die Dokumentation der Schnittstelle erfolgt, kann selbst festgelegt werden.
+
+## API-Dokumentation
+
+Die API-Dokumentation ist über Swagger verfügbar. Starten Sie die Anwendung und rufen Sie die folgende URL auf, um die Dokumentation anzuzeigen:
+
+- **URL**: [https://localhost:7087/swagger/index.html](https://localhost:7087/swagger/index.html)
+
+
+
