@@ -10,7 +10,5 @@ namespace ADITUS.CodeChallenge.API.Services
     Task<Event> GetEventWithStatistics(Guid id);
 
     Task<EventStatistics> FetchAndMergeStatistics(Guid id, EventType type);
-    Task<bool> ReserveHardware(HardwareReservationRequest request);
-    Task<List<HardwareReservationStatus>> GetHardwareReservationStatus(Guid eventId);
   }
 }

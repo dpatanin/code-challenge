@@ -8,10 +8,12 @@ namespace ADITUS.CodeChallenge.API
   public class EventsController : ControllerBase
   {
     private readonly IEventService _eventService;
+    private readonly IHardwareReservationService _hardwareReservationService;
 
-    public EventsController(IEventService eventService)
+    public EventsController(IEventService eventService, IHardwareReservationService hardwareReservationService)
     {
       _eventService = eventService;
+      _hardwareReservationService = hardwareReservationService;
     }
 
     [HttpGet]
@@ -41,7 +43,7 @@ namespace ADITUS.CodeChallenge.API
     {
       request.EventId = id;
 
-      var success = await _eventService.ReserveHardware(request);
+      var success = await _hardwareReservationService.ReserveHardware(request);
       if (!success)
       {
         return BadRequest("Hardware reservation failed. Ensure the reservation meets the criteria.");
@@ -51,16 +53,16 @@ namespace ADITUS.CodeChallenge.API
     }
 
     [HttpGet]
-    [Route("{id}/hardware-reservation-status")]
-    public async Task<IActionResult> GetHardwareReservationStatus(Guid id)
+    [Route("{id}/hardware-reservations")]
+    public async Task<IActionResult> GetHardwareReservations(Guid id)
     {
-      var reservations = await _eventService.GetHardwareReservationStatus(id);
-      if (reservations == null || !reservations.Any())
+      var reservations = await _hardwareReservationService.GetHardwareReservationStatus(id);
+      if (reservations.Any())
       {
-        return NotFound("No reservations found for this event.");
+        return Ok(reservations);
       }
 
-      return Ok(reservations);
+      return NotFound("No reservations found for this event.");
     }
   }
 }
