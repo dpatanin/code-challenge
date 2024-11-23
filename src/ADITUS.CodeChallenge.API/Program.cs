@@ -10,7 +10,8 @@ builder.Services.AddControllers().AddJsonOptions(x =>
 
 builder.Services.AddHttpClient();
 
-builder.Services.AddScoped<IEventService, EventService>();
+//builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddSingleton<IEventService, EventService>();
 
 var app = builder.Build();
 

@@ -5,12 +5,24 @@ namespace ADITUS.CodeChallenge.API.Services
 {
   public class EventService : IEventService
   {
+    private readonly int _minDaysBeforeEventForReservation = 28;
     private readonly IList<Event> _events;
     private readonly HttpClient _httpClient;
+    private readonly List<Hardware> _hardwareInventory;
+    private readonly Dictionary<Guid, List<HardwareReservationStatus>> _reservations;
 
     public EventService(HttpClient httpClient)
     {
       _httpClient = httpClient;
+      _reservations = new Dictionary<Guid, List<HardwareReservationStatus>>();
+
+      _hardwareInventory = new List<Hardware>
+        {
+            new Hardware { Name = "Drehsperre", AvailableQuantity = 100 },
+            new Hardware { Name = "Funkhandscanner", AvailableQuantity = 200 },
+            new Hardware { Name = "Mobiles Scan-Terminal", AvailableQuantity = 50 }
+        };
+
       _events = new List<Event>
       {
         new Event
@@ -54,8 +66,8 @@ namespace ADITUS.CodeChallenge.API.Services
           Id = Guid.Parse("3a17b294-8716-448c-94db-ebf9bf53f1ce"),
           Year = 2023,
           Name = "ADITUS Code Challenge 2023",
-          StartDate = new DateTime(2023, 1, 1),
-          EndDate = new DateTime(2023, 1, 23),
+          StartDate = new DateTime(2025, 1, 1),
+          EndDate = new DateTime(2025, 1, 23),
           Type = EventType.OnSite
         }
       };
@@ -157,6 +169,60 @@ namespace ADITUS.CodeChallenge.API.Services
         // Log errors if necessary
         return null;
       }
+    }
+
+    public Task<bool> ReserveHardware(HardwareReservationRequest request)
+    {
+      var @event = _events.FirstOrDefault(e => e.Id == request.EventId);
+      if (@event == null || !IsReservationEligible(@event) || !IsHardwareAvailable(request.RequestedHardware))
+      {
+        return Task.FromResult(false);
+      }
+
+      foreach (var item in request.RequestedHardware)
+      {
+        var hardware = _hardwareInventory.First(h => h.Name == item.HardwareName);
+        hardware.AvailableQuantity -= item.Quantity;
+      }
+
+      if (!_reservations.ContainsKey(request.EventId))
+      {
+        _reservations[request.EventId] = new List<HardwareReservationStatus>();
+      }
+
+      _reservations[request.EventId].Add(new HardwareReservationStatus
+      {
+        EventId = request.EventId,
+        Status = ReservationStatus.Pending,
+        ReservedHardware = request.RequestedHardware
+      });
+
+      return Task.FromResult(true);
+    }
+
+    private bool IsReservationEligible(Event @event)
+    {
+      return @event.StartDate != null
+          && (@event.StartDate.Value - DateTime.Now).TotalDays >= _minDaysBeforeEventForReservation;
+    }
+
+    private bool IsHardwareAvailable(IEnumerable<HardwareRequestItem> requestedHardware)
+    {
+      return requestedHardware.All(item =>
+      {
+        var hardware = _hardwareInventory.FirstOrDefault(h => h.Name == item.HardwareName);
+        return hardware != null && hardware.AvailableQuantity >= item.Quantity;
+      });
+    }
+
+    public Task<List<HardwareReservationStatus>> GetHardwareReservationStatus(Guid eventId)
+    {
+      if (_reservations.TryGetValue(eventId, out var reservations))
+      {
+        return Task.FromResult(reservations);
+      }
+
+      return Task.FromResult(new List<HardwareReservationStatus>());
     }
   }
 }
