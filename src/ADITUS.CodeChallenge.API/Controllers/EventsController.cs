@@ -83,26 +83,26 @@ namespace ADITUS.CodeChallenge.API
     }
 
     /// <summary>
-    /// Get all hardware reservations for a specific event.
+    /// Get the hardware reservation for a specific event.
     /// </summary>
     /// <param name="id">Event unique identifier</param>
-    /// <returns>List of hardware reservations for the event</returns>
-    /// <response code="200">Returns a list of hardware reservations</response>
+    /// <returns>Hardware reservation for the event</returns>
+    /// <response code="200">Returns a hardware reservation</response>
     /// <response code="404">No reservations found</response>
     [HttpGet]
     [Route("{id}/hardware-reservations")]
-    [SwaggerOperation(Summary = "Get hardware reservations for an event")]
-    [ProducesResponseType(typeof(List<HardwareReservationStatus>), 200)]
+    [SwaggerOperation(Summary = "Get hardware reservation for an event")]
+    [ProducesResponseType(typeof(HardwareReservationStatus), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetHardwareReservations(Guid id)
     {
-      var reservations = await _hardwareReservationService.GetHardwareReservationStatus(id);
-      if (reservations.Any())
+      var reservation = await _hardwareReservationService.GetHardwareReservationStatus(id);
+      if (reservation == null)
       {
-        return Ok(reservations);
+        return NotFound("No reservations found for this event.");
       }
-
-      return NotFound("No reservations found for this event.");
+      
+      return Ok(reservation);
     }
   }
 }

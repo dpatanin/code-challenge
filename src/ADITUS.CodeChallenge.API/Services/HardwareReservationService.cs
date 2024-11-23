@@ -6,13 +6,13 @@ namespace ADITUS.CodeChallenge.API.Services
   {
     private readonly IEventService _eventService;
     private readonly List<Hardware> _hardwareInventory;
-    private readonly Dictionary<Guid, List<HardwareReservationStatus>> _reservations;
+    private readonly Dictionary<Guid, HardwareReservationStatus> _reservations;
     private readonly int _minDaysBeforeEventForReservation = 28;
 
     public HardwareReservationService(IEventService eventService)
     {
       _eventService = eventService;
-      _reservations = new Dictionary<Guid, List<HardwareReservationStatus>>();
+      _reservations = new Dictionary<Guid, HardwareReservationStatus>();
 
       _hardwareInventory = new List<Hardware>
         {
@@ -36,17 +36,12 @@ namespace ADITUS.CodeChallenge.API.Services
         hardware.AvailableQuantity -= item.Quantity;
       }
 
-      if (!_reservations.ContainsKey(request.EventId))
-      {
-        _reservations[request.EventId] = new List<HardwareReservationStatus>();
-      }
-
-      _reservations[request.EventId].Add(new HardwareReservationStatus
+      _reservations[request.EventId] = new HardwareReservationStatus
       {
         EventId = request.EventId,
         Status = ReservationStatus.Pending,
         ReservedHardware = request.RequestedHardware
-      });
+      };
 
       return true;
     }
@@ -54,7 +49,8 @@ namespace ADITUS.CodeChallenge.API.Services
     private bool IsReservationEligible(Event @event)
     {
       return @event.StartDate != null
-          && (@event.StartDate.Value - DateTime.Now).TotalDays >= _minDaysBeforeEventForReservation;
+          && (@event.StartDate.Value - DateTime.Now).TotalDays >= _minDaysBeforeEventForReservation
+          && !_reservations.ContainsKey(@event.Id);
     }
 
     private bool IsHardwareAvailable(IEnumerable<HardwareRequestItem> requestedHardware)
@@ -66,15 +62,14 @@ namespace ADITUS.CodeChallenge.API.Services
       });
     }
 
-    public Task<List<HardwareReservationStatus>> GetHardwareReservationStatus(Guid eventId)
+    public Task<HardwareReservationStatus> GetHardwareReservationStatus(Guid eventId)
     {
-      if (_reservations.TryGetValue(eventId, out var reservations))
+      if (_reservations.TryGetValue(eventId, out var reservation))
       {
-        return Task.FromResult(reservations);
+        return Task.FromResult(reservation);
       }
 
-      return Task.FromResult(new List<HardwareReservationStatus>());
+      return Task.FromResult<HardwareReservationStatus>(null);
     }
   }
-
 }
